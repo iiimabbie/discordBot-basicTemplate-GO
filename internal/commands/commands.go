@@ -19,6 +19,7 @@ type Command struct {
 
 var registeredCommands []*Command
 var componentHandlers = make(map[string]Handler)
+var modalHandlers = make(map[string]Handler)
 
 // RegisterCommand registers a slash command (call in init())
 func RegisterCommand(definition *discordgo.ApplicationCommand, handler Handler) {
@@ -31,6 +32,11 @@ func RegisterCommand(definition *discordgo.ApplicationCommand, handler Handler) 
 // RegisterComponent registers a component handler (call in init())
 func RegisterComponent(customID string, handler Handler) {
 	componentHandlers[customID] = handler
+}
+
+// RegisterModal registers a modal submit handler (call in init())
+func RegisterModal(customID string, handler Handler) {
+	modalHandlers[customID] = handler
 }
 
 // ============================================
@@ -58,4 +64,9 @@ func GetHandlers() map[string]Handler {
 // GetComponentHandlers returns all component handlers
 func GetComponentHandlers() map[string]Handler {
 	return componentHandlers
+}
+
+// GetModalHandlers returns all modal submit handlers
+func GetModalHandlers() map[string]Handler {
+	return modalHandlers
 }

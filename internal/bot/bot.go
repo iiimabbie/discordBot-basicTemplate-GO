@@ -19,6 +19,7 @@ type Bot struct {
 	config            *config.Config
 	handlers          map[string]commands.Handler
 	componentHandlers map[string]commands.Handler
+	modalHandlers     map[string]commands.Handler
 }
 
 // New creates a new bot instance
@@ -34,6 +35,7 @@ func New(cfg *config.Config) (*Bot, error) {
 		config:            cfg,
 		handlers:          commands.GetHandlers(),
 		componentHandlers: commands.GetComponentHandlers(),
+		modalHandlers:     commands.GetModalHandlers(),
 	}
 
 	// Register event handlers
@@ -82,6 +84,15 @@ func (b *Bot) onInteraction(s *discordgo.Session, i *discordgo.InteractionCreate
 			handler(s, i)
 		} else {
 			log.Printf("Unknown component: %s", customID)
+		}
+
+	case discordgo.InteractionModalSubmit:
+		// Modal submissions
+		customID := i.ModalSubmitData().CustomID
+		if handler, ok := b.modalHandlers[customID]; ok {
+			handler(s, i)
+		} else {
+			log.Printf("Unknown modal: %s", customID)
 		}
 	}
 }

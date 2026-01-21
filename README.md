@@ -6,6 +6,8 @@
 
 - **Embed Builder**: Fluent API 建立漂亮的嵌入訊息
 - **Button Builder**: 按鈕元件支援
+- **Select Menu Builder**: 下拉選單（String/User/Role/Channel）
+- **Modal Builder**: 彈跳視窗表單
 - **Color Palette**: 40+ 預設顏色
 - **Message Styles**: Success, Error, Warning, Info 模板
 - **Public/Private Messages**: 支援私人訊息 (ephemeral)
@@ -26,7 +28,9 @@ discord-bot-template/
 │   │   ├── commands.go      # 指令註冊中心
 │   │   └── ping.go          # /ping 指令
 │   ├── component/
-│   │   └── button.go        # Button Builder
+│   │   ├── button.go        # Button Builder
+│   │   ├── select.go        # Select Menu Builder
+│   │   └── modal.go         # Modal Builder
 │   ├── config/
 │   │   └── config.go        # 設定管理
 │   └── embed/
@@ -250,6 +254,126 @@ component.NewButton().
     Primary().
     Emoji("👍").
     Build()
+```
+
+## Select Menu 使用方式
+
+### String Select（自定義選項）
+
+```go
+// 建立下拉選單
+menu := component.NewSelect().
+    CustomID("color_select").
+    Placeholder("選擇顏色...").
+    AddOption("紅色", "red", "熱情的顏色").
+    AddOptionWithEmoji("藍色", "blue", "冷靜的顏色", "🔵").
+    Build()
+
+row := component.SelectRow(menu)
+```
+
+### 快速建立
+
+```go
+// 一行建立
+menu := component.StringSelect("my_select", "請選擇...",
+    component.Option("選項1", "value1", "說明1"),
+    component.Option("選項2", "value2", "說明2"),
+)
+```
+
+### Auto-populated Select（自動填充）
+
+```go
+// 用戶選單
+component.UserSelectRow("user_select", "選擇用戶...")
+
+// 角色選單
+component.RoleSelectRow("role_select", "選擇角色...")
+
+// 頻道選單
+component.ChannelSelectRow("channel_select", "選擇頻道...")
+```
+
+### 處理選擇
+
+```go
+func init() {
+    RegisterComponent("color_select", ColorSelectHandler)
+}
+
+func ColorSelectHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+    data := i.MessageComponentData()
+    selected := data.Values[0]  // 用戶選擇的值
+
+    // 處理選擇...
+}
+```
+
+## Modal 使用方式
+
+### 建立 Modal
+
+```go
+// 短文字輸入
+titleInput := component.ShortInput("title", "標題", "輸入標題...")
+
+// 長文字輸入
+descInput := component.ParagraphInput("desc", "描述", "輸入詳細描述...")
+
+// 建立 Modal
+modal := component.NewModal().
+    CustomID("feedback_modal").
+    Title("回饋表單").
+    AddTextInput(titleInput).
+    AddTextInput(descInput).
+    Build()
+
+// 回應 Modal（通常由按鈕觸發）
+s.InteractionRespond(i.Interaction, modal)
+```
+
+### 進階 Text Input
+
+```go
+component.NewTextInput().
+    CustomID("message").
+    Label("訊息").
+    Placeholder("輸入訊息...").
+    Paragraph().           // 多行輸入
+    Required().            // 必填
+    MinLength(10).         // 最少字數
+    MaxLength(1000).       // 最多字數
+    Value("預設值").        // 預設內容
+    Build()
+```
+
+### 處理 Modal 提交
+
+```go
+func init() {
+    RegisterModal("feedback_modal", FeedbackHandler)
+}
+
+func FeedbackHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+    data := i.ModalSubmitData()
+
+    // 取得輸入值
+    title := component.GetModalValue(data, "title")
+    desc := component.GetModalValue(data, "desc")
+
+    // 處理提交...
+}
+```
+
+### 快速 Modal 模板
+
+```go
+// 簡單單欄位 Modal
+component.SimpleModal("my_modal", "標題", "input_id", "欄位名", "placeholder")
+
+// 回饋表單 Modal（標題 + 描述）
+component.FeedbackModal("feedback", "提交回饋")
 ```
 
 ## 環境變數
