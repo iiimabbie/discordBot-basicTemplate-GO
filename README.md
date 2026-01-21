@@ -26,7 +26,7 @@ discord-bot-template/
 │   │   └── bot.go           # Bot 核心邏輯
 │   ├── commands/
 │   │   ├── commands.go      # 指令註冊中心
-│   │   └── ping.go          # /ping 指令
+│   │   └── example.go       # /example 互動範例
 │   ├── component/
 │   │   ├── button.go        # Button Builder
 │   │   ├── select.go        # Select Menu Builder

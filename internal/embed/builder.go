@@ -195,17 +195,6 @@ func Loading(message string) *discordgo.MessageEmbed {
 		Build()
 }
 
-// Ping creates a ping response embed
-func Ping(latency time.Duration, wsLatency time.Duration) *discordgo.MessageEmbed {
-	return New().
-		Title("🏓 Pong!").
-		Color(ColorSuccess).
-		InlineField("Roundtrip", fmt.Sprintf("`%dms`", latency.Milliseconds())).
-		InlineField("WebSocket", fmt.Sprintf("`%dms`", wsLatency.Milliseconds())).
-		Timestamp().
-		Build()
-}
-
 // ============================================
 // Utility Functions
 // ============================================

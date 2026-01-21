@@ -15,104 +15,179 @@ func init() {
 	// 自動註冊指令
 	RegisterCommand(exampleCommand, ExampleHandler)
 
-	// 自動註冊按鈕
+	// 導航選單
+	RegisterComponent("example_nav", ExampleNavHandler)
+
+	// Embed 範例
 	RegisterComponent("example_reload", ExampleReloadHandler)
+
+	// Button 範例
 	RegisterComponent("example_primary", ExampleButtonHandler)
 	RegisterComponent("example_secondary", ExampleButtonHandler)
 	RegisterComponent("example_success", ExampleButtonHandler)
 	RegisterComponent("example_danger", ExampleButtonHandler)
-	RegisterComponent("example_emoji", ExampleButtonHandler)
-	RegisterComponent("example_open_modal", ExampleOpenModalHandler)
 
-	// 自動註冊 Select Menu
-	RegisterComponent("example_select", ExampleSelectHandler)
+	// Select 範例
+	RegisterComponent("example_color_select", ExampleColorSelectHandler)
 	RegisterComponent("example_user_select", ExampleUserSelectHandler)
 
-	// 自動註冊 Modal
+	// Modal 範例
+	RegisterComponent("example_open_modal", ExampleOpenModalHandler)
 	RegisterModal("example_modal", ExampleModalSubmitHandler)
 }
 
 var exampleCommand = &discordgo.ApplicationCommand{
 	Name:        "example",
-	Description: "Show a complete example message with all features",
+	Description: "Interactive demo of all template features",
 }
 
-// buildExampleMessage builds the example embed and components
-func buildExampleMessage(user *discordgo.User) (*discordgo.MessageEmbed, []discordgo.MessageComponent) {
-	// Build embed
+// ============================================
+// Navigation
+// ============================================
+
+func buildNavSelect(current string) discordgo.ActionsRow {
+	menu := component.NewSelect().
+		CustomID("example_nav").
+		Placeholder("Select a demo...").
+		AddOptionWithEmoji("Embed Features", "embed", "Rich embed with all features", "📝").
+		AddOptionWithEmoji("Buttons", "buttons", "All button styles", "🔘").
+		AddOptionWithEmoji("Select Menus", "selects", "Dropdown menus", "📋").
+		AddOptionWithEmoji("Modal Form", "modal", "Popup form demo", "📝").
+		Build()
+
+	// Mark current as default
+	for i := range menu.Options {
+		if menu.Options[i].Value == current {
+			menu.Options[i].Default = true
+		}
+	}
+
+	return component.SelectRow(menu)
+}
+
+// ============================================
+// Page Builders
+// ============================================
+
+func buildEmbedPage(user *discordgo.User) (*discordgo.MessageEmbed, []discordgo.MessageComponent) {
 	e := embed.New().
-		Title("Example Message").
+		Title("Embed Features Demo").
 		URL("https://discord.com").
-		Description("This is a **complete example** showing all embed and component features!\n\n" +
-			embed.Bold("Bold text") + " | " +
-			embed.Italic("Italic text") + " | " +
-			embed.InlineCode("code") + "\n" +
-			embed.Spoiler("Hidden text") + " | " +
-			embed.Mention(user.ID)).
+		Description("This embed demonstrates all available features:\n\n"+
+			embed.Bold("Bold")+", "+
+			embed.Italic("Italic")+", "+
+			embed.InlineCode("Code")+", "+
+			embed.Spoiler("Spoiler")+"\n\n"+
+			"Mention: "+embed.Mention(user.ID)).
 		Color(embed.ColorFuchsia).
 		Author(user.Username, "", user.AvatarURL("32")).
 		Thumbnail(user.AvatarURL("128")).
-		InlineField("Inline Field 1", "Value 1").
-		InlineField("Inline Field 2", "Value 2").
-		InlineField("Inline Field 3", "Value 3").
-		BlockField("Block Field", "This field takes the full width").
-		BlockField("Timestamp", embed.RelativeTime(time.Now().Add(-2*time.Hour))+" (2 hours ago)").
+		InlineField("Inline 1", "Value").
+		InlineField("Inline 2", "Value").
+		InlineField("Inline 3", "Value").
+		BlockField("Block Field", "This takes full width").
+		BlockField("Relative Time", embed.RelativeTime(time.Now().Add(-2*time.Hour))).
 		Image("https://cdn-icons-png.flaticon.com/512/5277/5277459.png").
-		Footer("Example Footer", "").
+		Footer("Footer Text", "").
 		Timestamp().
 		Build()
 
-	// Row 1: Buttons
+	nav := buildNavSelect("embed")
+	reload := component.ReloadButtonRow("example_reload")
+
+	return e, []discordgo.MessageComponent{nav, reload}
+}
+
+func buildButtonsPage() (*discordgo.MessageEmbed, []discordgo.MessageComponent) {
+	e := embed.New().
+		Title("Button Styles Demo").
+		Description("Click any button to see it in action.\n\n"+
+			"**Available styles:**\n"+
+			"• Primary (Blue)\n"+
+			"• Secondary (Gray)\n"+
+			"• Success (Green)\n"+
+			"• Danger (Red)\n"+
+			"• Link (External URL)").
+		Color(embed.ColorBlurple).
+		Build()
+
+	nav := buildNavSelect("buttons")
+
 	buttonRow := component.NewActionRow().
 		AddButton(component.PrimaryButton("example_primary", "Primary")).
 		AddButton(component.SecondaryButton("example_secondary", "Secondary")).
 		AddButton(component.SuccessButton("example_success", "Success")).
 		AddButton(component.DangerButton("example_danger", "Danger")).
+		AddButton(component.LinkButton("https://discord.com", "Link")).
 		Build()
 
-	// Row 2: More buttons
-	buttonRow2 := component.NewActionRow().
-		AddButton(component.NewButton().
-			CustomID("example_emoji").
-			Label("With Emoji").
-			Primary().
-			Emoji("🎉").
-			Build()).
-		AddButton(component.NewButton().
-			CustomID("example_open_modal").
-			Label("Open Form").
-			Secondary().
-			Emoji("📝").
-			Build()).
-		AddButton(component.LinkButton("https://discord.com", "Discord Link")).
-		Build()
-
-	// Row 3: String Select Menu
-	stringSelect := component.NewSelect().
-		CustomID("example_select").
-		Placeholder("Choose your favorite color...").
-		AddOptionWithEmoji("Red", "red", "A warm, passionate color", "🔴").
-		AddOptionWithEmoji("Green", "green", "The color of nature", "🟢").
-		AddOptionWithEmoji("Blue", "blue", "A calm, peaceful color", "🔵").
-		AddOptionWithEmoji("Purple", "purple", "A royal, creative color", "🟣").
-		Build()
-	selectRow := component.SelectRow(stringSelect)
-
-	// Row 4: User Select Menu
-	userSelect := component.NewUserSelect("example_user_select").
-		Placeholder("Select a user...").
-		Build()
-	userSelectRow := component.SelectRow(userSelect)
-
-	// Row 5: Reload button
-	reloadRow := component.ReloadButtonRow("example_reload")
-
-	return e, []discordgo.MessageComponent{buttonRow, buttonRow2, selectRow, userSelectRow, reloadRow}
+	return e, []discordgo.MessageComponent{nav, buttonRow}
 }
 
-// ExampleHandler handles the /example command
+func buildSelectsPage() (*discordgo.MessageEmbed, []discordgo.MessageComponent) {
+	e := embed.New().
+		Title("Select Menu Demo").
+		Description("**Available select types:**\n"+
+			"• String Select - Custom options\n"+
+			"• User Select - Pick a user\n"+
+			"• Role Select - Pick a role\n"+
+			"• Channel Select - Pick a channel\n\n"+
+			"Try the menus below!").
+		Color(embed.ColorGreen).
+		Build()
+
+	nav := buildNavSelect("selects")
+
+	colorSelect := component.NewSelect().
+		CustomID("example_color_select").
+		Placeholder("Pick a color...").
+		AddOptionWithEmoji("Red", "red", "Warm and passionate", "🔴").
+		AddOptionWithEmoji("Green", "green", "Nature and growth", "🟢").
+		AddOptionWithEmoji("Blue", "blue", "Calm and peaceful", "🔵").
+		AddOptionWithEmoji("Purple", "purple", "Royal and creative", "🟣").
+		Build()
+	colorRow := component.SelectRow(colorSelect)
+
+	userSelect := component.NewUserSelect("example_user_select").
+		Placeholder("Pick a user...").
+		Build()
+	userRow := component.SelectRow(userSelect)
+
+	return e, []discordgo.MessageComponent{nav, colorRow, userRow}
+}
+
+func buildModalPage() (*discordgo.MessageEmbed, []discordgo.MessageComponent) {
+	e := embed.New().
+		Title("Modal Form Demo").
+		Description("Modals are popup forms that collect user input.\n\n"+
+			"**Features:**\n"+
+			"• Short text input (single line)\n"+
+			"• Paragraph input (multi-line)\n"+
+			"• Required/Optional fields\n"+
+			"• Min/Max length validation\n\n"+
+			"Click the button below to try it!").
+		Color(embed.ColorGold).
+		Build()
+
+	nav := buildNavSelect("modal")
+
+	openBtn := component.NewButton().
+		CustomID("example_open_modal").
+		Label("Open Form").
+		Primary().
+		Emoji("📝").
+		Build()
+	btnRow := component.SingleButtonRow(openBtn)
+
+	return e, []discordgo.MessageComponent{nav, btnRow}
+}
+
+// ============================================
+// Handlers
+// ============================================
+
 func ExampleHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	e, components := buildExampleMessage(i.Member.User)
+	e, components := buildEmbedPage(i.Member.User)
 
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -123,9 +198,24 @@ func ExampleHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 }
 
-// ExampleReloadHandler handles the reload button click
-func ExampleReloadHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	e, components := buildExampleMessage(i.Member.User)
+func ExampleNavHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	selected := i.MessageComponentData().Values[0]
+
+	var e *discordgo.MessageEmbed
+	var components []discordgo.MessageComponent
+
+	switch selected {
+	case "embed":
+		e, components = buildEmbedPage(i.Member.User)
+	case "buttons":
+		e, components = buildButtonsPage()
+	case "selects":
+		e, components = buildSelectsPage()
+	case "modal":
+		e, components = buildModalPage()
+	default:
+		e, components = buildEmbedPage(i.Member.User)
+	}
 
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseUpdateMessage,
@@ -136,29 +226,33 @@ func ExampleReloadHandler(s *discordgo.Session, i *discordgo.InteractionCreate) 
 	})
 }
 
-// ExampleButtonHandler handles button clicks
+func ExampleReloadHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	e, components := buildEmbedPage(i.Member.User)
+
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseUpdateMessage,
+		Data: &discordgo.InteractionResponseData{
+			Embeds:     []*discordgo.MessageEmbed{e},
+			Components: components,
+		},
+	})
+}
+
 func ExampleButtonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	buttonID := i.MessageComponentData().CustomID
 
-	var response string
-	switch buttonID {
-	case "example_primary":
-		response = "You clicked the **Primary** button!"
-	case "example_secondary":
-		response = "You clicked the **Secondary** button!"
-	case "example_success":
-		response = "You clicked the **Success** button!"
-	case "example_danger":
-		response = "You clicked the **Danger** button!"
-	case "example_emoji":
-		response = "You clicked the **Emoji** button! 🎉"
-	default:
-		response = "Button clicked!"
+	styleMap := map[string]string{
+		"example_primary":   "Primary",
+		"example_secondary": "Secondary",
+		"example_success":   "Success",
+		"example_danger":    "Danger",
 	}
 
+	style := styleMap[buttonID]
+
 	e := embed.New().
-		Description(response).
-		Color(embed.ColorFuchsia).
+		Description(fmt.Sprintf("You clicked the **%s** button!", style)).
+		Color(embed.ColorBlurple).
 		Build()
 
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -170,10 +264,8 @@ func ExampleButtonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) 
 	})
 }
 
-// ExampleSelectHandler handles the string select menu
-func ExampleSelectHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	data := i.MessageComponentData()
-	selected := data.Values[0]
+func ExampleColorSelectHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	selected := i.MessageComponentData().Values[0]
 
 	colorMap := map[string]int{
 		"red":    embed.ColorRed,
@@ -183,11 +275,10 @@ func ExampleSelectHandler(s *discordgo.Session, i *discordgo.InteractionCreate) 
 	}
 
 	colorName := strings.ToUpper(selected[:1]) + selected[1:]
-	color := colorMap[selected]
 
 	e := embed.New().
-		Description(fmt.Sprintf("You selected **%s**! 🎨", colorName)).
-		Color(color).
+		Description(fmt.Sprintf("You selected **%s**!", colorName)).
+		Color(colorMap[selected]).
 		Build()
 
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -199,14 +290,12 @@ func ExampleSelectHandler(s *discordgo.Session, i *discordgo.InteractionCreate) 
 	})
 }
 
-// ExampleUserSelectHandler handles the user select menu
 func ExampleUserSelectHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	data := i.MessageComponentData()
-	userID := data.Values[0]
+	userID := i.MessageComponentData().Values[0]
 
 	e := embed.New().
-		Description(fmt.Sprintf("You selected %s! 👤", embed.Mention(userID))).
-		Color(embed.ColorFuchsia).
+		Description(fmt.Sprintf("You selected %s!", embed.Mention(userID))).
+		Color(embed.ColorBlurple).
 		Build()
 
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -218,10 +307,9 @@ func ExampleUserSelectHandler(s *discordgo.Session, i *discordgo.InteractionCrea
 	})
 }
 
-// ExampleOpenModalHandler opens the example modal
 func ExampleOpenModalHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	titleInput := component.NewTextInput().
-		CustomID("example_modal_title").
+		CustomID("modal_title").
 		Label("Title").
 		Placeholder("Enter a title...").
 		Short().
@@ -230,9 +318,9 @@ func ExampleOpenModalHandler(s *discordgo.Session, i *discordgo.InteractionCreat
 		Build()
 
 	messageInput := component.NewTextInput().
-		CustomID("example_modal_message").
+		CustomID("modal_message").
 		Label("Message").
-		Placeholder("Enter your message here...").
+		Placeholder("Enter your message...").
 		Paragraph().
 		Required().
 		MinLength(10).
@@ -241,7 +329,7 @@ func ExampleOpenModalHandler(s *discordgo.Session, i *discordgo.InteractionCreat
 
 	modal := component.NewModal().
 		CustomID("example_modal").
-		Title("📝 Example Form").
+		Title("Example Form").
 		AddTextInput(titleInput).
 		AddTextInput(messageInput).
 		Build()
@@ -249,19 +337,18 @@ func ExampleOpenModalHandler(s *discordgo.Session, i *discordgo.InteractionCreat
 	s.InteractionRespond(i.Interaction, modal)
 }
 
-// ExampleModalSubmitHandler handles the modal submission
 func ExampleModalSubmitHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	data := i.ModalSubmitData()
 
-	title := component.GetModalValue(data, "example_modal_title")
-	message := component.GetModalValue(data, "example_modal_message")
+	title := component.GetModalValue(data, "modal_title")
+	message := component.GetModalValue(data, "modal_message")
 
 	e := embed.New().
-		Title("✅ Form Submitted!").
+		Title("Form Submitted!").
 		Color(embed.ColorSuccess).
 		BlockField("Title", title).
 		BlockField("Message", message).
-		Footer(fmt.Sprintf("Submitted by %s", i.Member.User.Username), i.Member.User.AvatarURL("32")).
+		Footer(fmt.Sprintf("By %s", i.Member.User.Username), i.Member.User.AvatarURL("32")).
 		Timestamp().
 		Build()
 
