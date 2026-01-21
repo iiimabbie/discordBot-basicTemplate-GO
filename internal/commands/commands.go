@@ -41,3 +41,24 @@ func GetHandlers() map[string]Handler {
 	}
 	return handlers
 }
+
+// ============================================
+// Component Handlers (Buttons, Select Menus)
+// ============================================
+
+// componentHandlers stores handlers for message components (buttons, select menus)
+var componentHandlers = map[string]Handler{
+	"ping_reload": PingReloadHandler,
+	// Add your component handlers here:
+	// "button_custom_id": ButtonClickHandler,
+}
+
+// RegisterComponentHandler registers a handler for a component custom ID
+func RegisterComponentHandler(customID string, handler Handler) {
+	componentHandlers[customID] = handler
+}
+
+// GetComponentHandlers returns all component handlers
+func GetComponentHandlers() map[string]Handler {
+	return componentHandlers
+}

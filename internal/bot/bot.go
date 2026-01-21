@@ -15,9 +15,10 @@ import (
 
 // Bot represents the Discord bot instance
 type Bot struct {
-	session  *discordgo.Session
-	config   *config.Config
-	handlers map[string]commands.Handler
+	session           *discordgo.Session
+	config            *config.Config
+	handlers          map[string]commands.Handler
+	componentHandlers map[string]commands.Handler
 }
 
 // New creates a new bot instance
@@ -29,9 +30,10 @@ func New(cfg *config.Config) (*Bot, error) {
 	}
 
 	bot := &Bot{
-		session:  session,
-		config:   cfg,
-		handlers: commands.GetHandlers(),
+		session:           session,
+		config:            cfg,
+		handlers:          commands.GetHandlers(),
+		componentHandlers: commands.GetComponentHandlers(),
 	}
 
 	// Register event handlers
@@ -61,21 +63,26 @@ func (b *Bot) onReady(s *discordgo.Session, r *discordgo.Ready) {
 	}
 }
 
-// onInteraction handles slash command interactions
+// onInteraction handles all interactions (commands, buttons, etc.)
 func (b *Bot) onInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	// Only handle application commands
-	if i.Type != discordgo.InteractionApplicationCommand {
-		return
-	}
+	switch i.Type {
+	case discordgo.InteractionApplicationCommand:
+		// Slash commands
+		commandName := i.ApplicationCommandData().Name
+		if handler, ok := b.handlers[commandName]; ok {
+			handler(s, i)
+		} else {
+			log.Printf("Unknown command: %s", commandName)
+		}
 
-	// Get command name
-	commandName := i.ApplicationCommandData().Name
-
-	// Find and execute handler
-	if handler, ok := b.handlers[commandName]; ok {
-		handler(s, i)
-	} else {
-		log.Printf("Unknown command: %s", commandName)
+	case discordgo.InteractionMessageComponent:
+		// Buttons, Select Menus
+		customID := i.MessageComponentData().CustomID
+		if handler, ok := b.componentHandlers[customID]; ok {
+			handler(s, i)
+		} else {
+			log.Printf("Unknown component: %s", customID)
+		}
 	}
 }
 

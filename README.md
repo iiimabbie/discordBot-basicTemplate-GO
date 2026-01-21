@@ -5,6 +5,7 @@
 ## Features
 
 - **Embed Builder**: Fluent API 建立漂亮的嵌入訊息
+- **Button Builder**: 按鈕元件支援
 - **Color Palette**: 40+ 預設顏色
 - **Message Styles**: Success, Error, Warning, Info 模板
 - **Public/Private Messages**: 支援私人訊息 (ephemeral)
@@ -24,6 +25,8 @@ discord-bot-template/
 │   ├── commands/
 │   │   ├── commands.go      # 指令註冊中心
 │   │   └── ping.go          # /ping 指令
+│   ├── component/
+│   │   └── button.go        # Button Builder
 │   ├── config/
 │   │   └── config.go        # 設定管理
 │   └── embed/
@@ -44,19 +47,19 @@ cp .env.example .env
 # 編輯 .env 填入 DISCORD_TOKEN
 
 # 啟動
-docker-compose up -d
+docker compose up -d
 
 # 查看日誌
-docker-compose logs -f
+docker compose logs -f
 
 # 停止
-docker-compose down
+docker compose down
 ```
 
 ### Development (Hot Reload)
 
 ```bash
-docker-compose --profile dev up discord-bot-dev
+docker compose --profile dev up discord-bot-dev
 ```
 
 ## 新增指令
@@ -183,6 +186,71 @@ s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
         Flags:  discordgo.MessageFlagsEphemeral,  // 關鍵！
     },
 })
+```
+
+## 按鈕使用方式
+
+### 發送帶按鈕的訊息
+
+```go
+import "discord-bot-template/internal/component"
+
+// 建立按鈕
+row := component.NewActionRow().
+    AddButton(component.PrimaryButton("btn_confirm", "確認")).
+    AddButton(component.DangerButton("btn_cancel", "取消")).
+    Build()
+
+// 發送訊息
+s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+    Type: discordgo.InteractionResponseChannelMessageWithSource,
+    Data: &discordgo.InteractionResponseData{
+        Content:    "請選擇：",
+        Components: []discordgo.MessageComponent{row},
+    },
+})
+```
+
+### 處理按鈕點擊
+
+在 `internal/commands/commands.go` 註冊 handler：
+
+```go
+var componentHandlers = map[string]Handler{
+    "btn_confirm": ConfirmHandler,
+    "btn_cancel":  CancelHandler,
+}
+
+func ConfirmHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+    s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+        Type: discordgo.InteractionResponseUpdateMessage,
+        Data: &discordgo.InteractionResponseData{
+            Content:    "已確認！",
+            Components: []discordgo.MessageComponent{}, // 移除按鈕
+        },
+    })
+}
+```
+
+### 按鈕樣式
+
+```go
+component.PrimaryButton("id", "藍色")    // 主要
+component.SecondaryButton("id", "灰色") // 次要
+component.SuccessButton("id", "綠色")   // 成功
+component.DangerButton("id", "紅色")    // 危險
+component.LinkButton("https://...", "連結") // 外部連結
+```
+
+### 進階 Builder
+
+```go
+component.NewButton().
+    CustomID("my_button").
+    Label("按我").
+    Primary().
+    Emoji("👍").
+    Build()
 ```
 
 ## 環境變數

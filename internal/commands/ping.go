@@ -3,6 +3,7 @@ package commands
 import (
 	"time"
 
+	"discord-bot-template/internal/component"
 	"discord-bot-template/internal/embed"
 
 	"github.com/bwmarrin/discordgo"
@@ -34,12 +35,62 @@ func PingHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	// Create response embed
 	pingEmbed := embed.Ping(roundtrip, wsLatency)
 
+	// Create reload button
+	row := component.SingleButtonRow(
+		component.NewButton().
+			CustomID("ping_reload").
+			Label("Reload").
+			Primary().
+			Emoji("🔄").
+			Build(),
+	)
+
 	// Edit the deferred response with actual content
 	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
-		Embeds: &[]*discordgo.MessageEmbed{pingEmbed},
+		Embeds:     &[]*discordgo.MessageEmbed{pingEmbed},
+		Components: &[]discordgo.MessageComponent{row},
 	})
 	if err != nil {
 		// Log error if needed
+		return
+	}
+}
+
+// PingReloadHandler handles the reload button click
+func PingReloadHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	start := time.Now()
+
+	// Defer update to show loading state
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredMessageUpdate,
+	})
+	if err != nil {
+		return
+	}
+
+	// Calculate new latencies
+	roundtrip := time.Since(start)
+	wsLatency := s.HeartbeatLatency()
+
+	// Create updated embed
+	pingEmbed := embed.Ping(roundtrip, wsLatency)
+
+	// Keep the reload button
+	row := component.SingleButtonRow(
+		component.NewButton().
+			CustomID("ping_reload").
+			Label("Reload").
+			Primary().
+			Emoji("🔄").
+			Build(),
+	)
+
+	// Update the message
+	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+		Embeds:     &[]*discordgo.MessageEmbed{pingEmbed},
+		Components: &[]discordgo.MessageComponent{row},
+	})
+	if err != nil {
 		return
 	}
 }
