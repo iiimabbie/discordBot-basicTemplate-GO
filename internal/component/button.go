@@ -157,3 +157,38 @@ func LinkButton(url, label string) discordgo.Button {
 func SingleButtonRow(btn discordgo.Button) discordgo.ActionsRow {
 	return NewActionRow().AddButton(btn).Build()
 }
+
+// ============================================
+// Common Button Presets
+// ============================================
+
+// ReloadButton creates a reload button with 🔄 emoji
+func ReloadButton(customID string) discordgo.Button {
+	return NewButton().
+		CustomID(customID).
+		Label("Reload").
+		Primary().
+		Emoji("🔄").
+		Build()
+}
+
+// ReloadButtonRow creates an action row with a reload button
+func ReloadButtonRow(customID string) discordgo.ActionsRow {
+	return SingleButtonRow(ReloadButton(customID))
+}
+
+// ConfirmCancelRow creates a row with confirm (green) and cancel (red) buttons
+func ConfirmCancelRow(confirmID, cancelID string) discordgo.ActionsRow {
+	return NewActionRow().
+		AddButton(SuccessButton(confirmID, "Confirm")).
+		AddButton(DangerButton(cancelID, "Cancel")).
+		Build()
+}
+
+// YesNoRow creates a row with yes (green) and no (red) buttons
+func YesNoRow(yesID, noID string) discordgo.ActionsRow {
+	return NewActionRow().
+		AddButton(SuccessButton(yesID, "Yes")).
+		AddButton(DangerButton(noID, "No")).
+		Build()
+}

@@ -13,20 +13,34 @@ type Command struct {
 	Handler    Handler
 }
 
-// AllCommands returns all available commands
-func AllCommands() []*Command {
-	return []*Command{
-		{Definition: PingCommand, Handler: PingHandler},
-		// Add your commands here:
-		// {Definition: YourCommand, Handler: YourHandler},
-	}
+// ============================================
+// Auto-registration (使用 init() 自動註冊)
+// ============================================
+
+var registeredCommands []*Command
+var componentHandlers = make(map[string]Handler)
+
+// RegisterCommand registers a slash command (call in init())
+func RegisterCommand(definition *discordgo.ApplicationCommand, handler Handler) {
+	registeredCommands = append(registeredCommands, &Command{
+		Definition: definition,
+		Handler:    handler,
+	})
 }
 
-// GetDefinitions returns all command definitions (for registration)
+// RegisterComponent registers a component handler (call in init())
+func RegisterComponent(customID string, handler Handler) {
+	componentHandlers[customID] = handler
+}
+
+// ============================================
+// Getters (for bot.go)
+// ============================================
+
+// GetDefinitions returns all command definitions
 func GetDefinitions() []*discordgo.ApplicationCommand {
-	commands := AllCommands()
-	definitions := make([]*discordgo.ApplicationCommand, len(commands))
-	for i, cmd := range commands {
+	definitions := make([]*discordgo.ApplicationCommand, len(registeredCommands))
+	for i, cmd := range registeredCommands {
 		definitions[i] = cmd.Definition
 	}
 	return definitions
@@ -34,28 +48,11 @@ func GetDefinitions() []*discordgo.ApplicationCommand {
 
 // GetHandlers returns a map of command names to handlers
 func GetHandlers() map[string]Handler {
-	commands := AllCommands()
 	handlers := make(map[string]Handler)
-	for _, cmd := range commands {
+	for _, cmd := range registeredCommands {
 		handlers[cmd.Definition.Name] = cmd.Handler
 	}
 	return handlers
-}
-
-// ============================================
-// Component Handlers (Buttons, Select Menus)
-// ============================================
-
-// componentHandlers stores handlers for message components (buttons, select menus)
-var componentHandlers = map[string]Handler{
-	"ping_reload": PingReloadHandler,
-	// Add your component handlers here:
-	// "button_custom_id": ButtonClickHandler,
-}
-
-// RegisterComponentHandler registers a handler for a component custom ID
-func RegisterComponentHandler(customID string, handler Handler) {
-	componentHandlers[customID] = handler
 }
 
 // GetComponentHandlers returns all component handlers

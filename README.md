@@ -64,7 +64,7 @@ docker compose --profile dev up discord-bot-dev
 
 ## 新增指令
 
-1. 在 `internal/commands/` 建立新檔案：
+在 `internal/commands/` 建立新檔案，使用 `init()` 自動註冊：
 
 ```go
 // internal/commands/hello.go
@@ -75,7 +75,12 @@ import (
     "github.com/bwmarrin/discordgo"
 )
 
-var HelloCommand = &discordgo.ApplicationCommand{
+func init() {
+    // 自動註冊指令
+    RegisterCommand(helloCommand, HelloHandler)
+}
+
+var helloCommand = &discordgo.ApplicationCommand{
     Name:        "hello",
     Description: "Say hello to the bot",
 }
@@ -96,16 +101,7 @@ func HelloHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 }
 ```
 
-2. 在 `internal/commands/commands.go` 註冊：
-
-```go
-func AllCommands() []*Command {
-    return []*Command{
-        {Definition: PingCommand, Handler: PingHandler},
-        {Definition: HelloCommand, Handler: HelloHandler},
-    }
-}
-```
+不需要手動到 commands.go 註冊，`init()` 會在程式啟動時自動執行。
 
 ## Embed 使用方式
 
@@ -213,12 +209,15 @@ s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 
 ### 處理按鈕點擊
 
-在 `internal/commands/commands.go` 註冊 handler：
+在同一個檔案的 `init()` 中註冊按鈕 handler：
 
 ```go
-var componentHandlers = map[string]Handler{
-    "btn_confirm": ConfirmHandler,
-    "btn_cancel":  CancelHandler,
+func init() {
+    RegisterCommand(myCommand, MyHandler)
+
+    // 註冊按鈕
+    RegisterComponent("btn_confirm", ConfirmHandler)
+    RegisterComponent("btn_cancel", CancelHandler)
 }
 
 func ConfirmHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {

@@ -9,8 +9,15 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// PingCommand definition
-var PingCommand = &discordgo.ApplicationCommand{
+func init() {
+	// 自動註冊指令
+	RegisterCommand(pingCommand, PingHandler)
+
+	// 自動註冊按鈕
+	RegisterComponent("ping_reload", PingReloadHandler)
+}
+
+var pingCommand = &discordgo.ApplicationCommand{
 	Name:        "ping",
 	Description: "Check bot latency and response time",
 }
@@ -36,14 +43,7 @@ func PingHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	pingEmbed := embed.Ping(roundtrip, wsLatency)
 
 	// Create reload button
-	row := component.SingleButtonRow(
-		component.NewButton().
-			CustomID("ping_reload").
-			Label("Reload").
-			Primary().
-			Emoji("🔄").
-			Build(),
-	)
+	row := component.ReloadButtonRow("ping_reload")
 
 	// Edit the deferred response with actual content
 	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
@@ -76,14 +76,7 @@ func PingReloadHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	pingEmbed := embed.Ping(roundtrip, wsLatency)
 
 	// Keep the reload button
-	row := component.SingleButtonRow(
-		component.NewButton().
-			CustomID("ping_reload").
-			Label("Reload").
-			Primary().
-			Emoji("🔄").
-			Build(),
-	)
+	row := component.ReloadButtonRow("ping_reload")
 
 	// Update the message
 	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
