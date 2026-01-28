@@ -384,3 +384,5 @@ component.FeedbackModal("feedback", "提交回饋")
 |------|------|------|
 | `DISCORD_TOKEN` | Yes | Discord Bot Token |
 | `GUILD_ID` | No | 測試用伺服器 ID（指令即時更新） |
+| `BOT_OWNER_IDS` | No | Bot 擁有者 Discord ID（逗號分隔） |
+| `BOT_ADMIN_IDS` | No | Bot 管理員 Discord ID（逗號分隔） |
