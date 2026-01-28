@@ -5,11 +5,13 @@ import (
 
 	"discord-bot-template/internal/bot"
 	"discord-bot-template/internal/config"
+	"discord-bot-template/internal/auth"
 )
 
 func main() {
 	// Load configuration
 	cfg := config.Load()
+	auth.Init(cfg) 
 
 	// Validate token
 	if cfg.Token == "" {

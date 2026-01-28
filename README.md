@@ -22,6 +22,8 @@ discord-bot-template/
 │   └── bot/
 │       └── main.go          # Entry point
 ├── internal/                # 內部套件（僅限本專案使用）
+│   ├── auth/
+│   │   └── permissions.go   # 權限檢查
 │   ├── bot/
 │   │   └── bot.go           # Bot 核心邏輯
 │   ├── commands/
