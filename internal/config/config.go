@@ -1,46 +1,24 @@
 package config
 
 import (
-	"os"
-	"strings"
+	"context"
+
+	"github.com/sethvargo/go-envconfig"
 )
 
 // Config holds all configuration for the bot
 type Config struct {
-	Token   string
-	GuildID string // Optional: for testing commands in specific guild
-	OwnerIDs []string // Bot owner Discord IDs
-	AdminIDs []string // Bot admin Discord IDs
+	Token    string   `env:"DISCORD_TOKEN,required"`
+	GuildID  string   `env:"GUILD_ID"`         // Optional: for testing commands in specific guild
+	OwnerIDs []string `env:"BOT_OWNER_IDS"`    // Bot owner Discord IDs (comma-separated)
+	AdminIDs []string `env:"BOT_ADMIN_IDS"`    // Bot admin Discord IDs (comma-separated)
 }
 
 // Load returns configuration from environment variables
-func Load() *Config {
-	return &Config{
-		Token:   getEnv("DISCORD_TOKEN", ""),
-		GuildID: getEnv("GUILD_ID", ""), // Leave empty to register global commands
-		OwnerIDs: parseCSV(getEnv("BOT_OWNER_IDS", "")),
-		AdminIDs: parseCSV(getEnv("BOT_ADMIN_IDS", "")),
+func Load() (*Config, error) {
+	var cfg Config
+	if err := envconfig.Process(context.Background(), &cfg); err != nil {
+		return nil, err
 	}
-}
-
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}
-
-// parseCSV parses a comma-separated string into a slice
-func parseCSV(s string) []string {
-	if s == "" {
-		return nil
-	}
-	parts := strings.Split(s, ",")
-	result := make([]string, 0, len(parts))
-	for _, p := range parts {
-		if trimmed := strings.TrimSpace(p); trimmed != "" {
-			result = append(result, trimmed)
-		}
-	}
-	return result
+	return &cfg, nil
 }

@@ -10,13 +10,11 @@ import (
 
 func main() {
 	// Load configuration
-	cfg := config.Load()
-	auth.Init(cfg) 
-
-	// Validate token
-	if cfg.Token == "" {
-		log.Fatal("DISCORD_TOKEN environment variable is required")
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
 	}
+	auth.Init(cfg)
 
 	// Create bot instance
 	b, err := bot.New(cfg)
